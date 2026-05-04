@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestió d'Expedients PRBB - v8</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#f5f5f3;color:#1a1a1a;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e0;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;color:#1a1a1a}
+.app{display:flex;flex:1;height:calc(100vh - 52px)}
+.sidebar{width:235px;border-right:1px solid #e5e5e0;display:flex;flex-direction:column;background:#fafaf8;flex-shrink:0;overflow:hidden}
+.sb-head{padding:13px 12px 10px;border-bottom:1px solid #e5e5e0;display:flex;flex-direction:column;gap:6px}
+.sb-label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;padding:8px 12px 2px}
+.home-btn{width:100%;padding:7px 10px;font-size:12px;background:transparent;border:1px solid #e5e5e0;border-radius:8px;cursor:pointer;color:#666;text-align:left;transition:all 0.15s}
+.home-btn:hover,.home-btn.active-nav{background:#fff;color:#1a1a1a;border-color:#ccc;font-weight:500}
+.new-btn{width:100%;padding:7px 10px;font-size:12px;background:#1D9E75;border:none;border-radius:8px;cursor:pointer;color:#fff;text-align:left;font-weight:500}
+.new-btn:hover{background:#0F6E56}
+.exp-list{flex:1;overflow-y:auto;padding:4px 0}
+.exp-item{padding:8px 12px;cursor:pointer;border-left:3px solid transparent}
+.exp-item:hover{background:#fff}
+.exp-item.active{border-left-color:#1D9E75;background:#fff}
+.exp-code{font-size:10px;color:#aaa;font-family:monospace}
+.exp-name{font-size:12px;font-weight:500;color:#1a1a1a;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;margin-top:3px;font-weight:600}
+.b-green{background:#EAF3DE;color:#3B6D11}
+.b-amber{background:#FAEEDA;color:#854F0B}
+.b-blue{background:#E6F1FB;color:#185FA5}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.mhead{padding:14px 22px;border-bottom:1px solid #e5e5e0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.mtitle{font-size:15px;font-weight:600;color:#1a1a1a;cursor:pointer;padding-bottom:1px;border-bottom:1px dashed transparent;transition:border-color 0.15s;display:inline-block}
+.mtitle:hover{border-bottom-color:#aaa}
+.mmeta{font-size:11px;color:#aaa;margin-top:3px}
+.btn{padding:6px 13px;font-size:12px;border:1px solid #e5e5e0;border-radius:8px;cursor:pointer;background:#fff;color:#444;transition:all 0.15s;font-weight:500}
+.btn:hover{background:#f5f5f3;border-color:#ccc}
+.btn-g{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn-g:hover{background:#0F6E56;border-color:#0F6E56}
+.btn-red{color:#A32D2D;border-color:#f0c0c0}
+.btn-red:hover{background:#fff8f8;border-color:#E24B4A}
+.mbody{flex:1;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:14px}
+.fase-header{padding:8px 0 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid #f0f0ec;margin-top:8px;margin-bottom:4px}
+.task{display:flex;align-items:flex-start;gap:9px;padding:9px 12px;border:1px solid #efefeb;border-radius:10px;background:#fff;transition:all 0.15s}
+.task.done{opacity:0.4}
+.chk{width:16px;height:16px;min-width:16px;border:1.5px solid #ddd;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#fff;margin-top:1px;transition:all 0.15s}
+.chk:hover{border-color:#1D9E75}
+.chk.checked{background:#1D9E75;border-color:#1D9E75}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:12px;color:#1a1a1a;line-height:1.5}
+.task-name.done-text{text-decoration:line-through;color:#bbb}
+.task-expand-btn{font-size:10px;color:#1D9E75;cursor:pointer;margin-left:5px;background:none;border:none;padding:0;font-weight:600;text-decoration:underline;white-space:nowrap}
+.task-tags{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+.resp-pill{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600}
+.r-imma{background:#E6F1FB;color:#185FA5}
+.r-abde{background:#EEEDFE;color:#3C3489}
+.r-area{background:#FAEEDA;color:#854F0B}
+.r-ester{background:#E6D9F0;color:#6B3FA0}
+.mail-btn{font-size:13px;padding:3px 7px;border:1px solid #1D9E75;border-radius:6px;background:#E1F5EE;cursor:pointer;color:#0F6E56;transition:all 0.15s;line-height:1}
+.mail-btn:hover{background:#1D9E75;color:#fff}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#fff;border-radius:14px;padding:22px;width:540px;max-height:92vh;overflow-y:auto;border:1px solid #e5e5e0}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:16px;color:#1a1a1a}
+.task-detail-modal{background:#fff;border-radius:14px;padding:24px;width:580px;max-width:95vw;max-height:85vh;overflow-y:auto;border:1px solid #e5e5e0}
+.task-detail-body{font-size:13px;color:#333;line-height:1.75;margin:10px 0 20px;white-space:pre-wrap;word-break:break-word;background:#f9f9f7;border-radius:8px;padding:14px}
+.form-label{font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;display:block;margin:12px 0 6px}
+.form-input{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.radio-opt{padding:8px 14px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px}
+.radio-opt.selected{border-color:#1D9E75;background:#f0faf6;color:#0F6E56;font-weight:600}
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:8px;opacity:0;transition:opacity .3s;z-index:999}
+.toast.show{opacity:1}
+.edit-inline{font-size:15px;font-weight:600;color:#1a1a1a;border:1px solid #1D9E75;border-radius:6px;padding:2px 8px;width:300px;max-width:100%}
+.edit-inline-sm{font-size:11px;color:#555;border:1px solid #1D9E75;border-radius:5px;padding:2px 6px;font-family:monospace;width:160px}
+
+/* ── Dashboard inici ── */
+.dash-section { margin-bottom: 28px; }
+.dash-section-title { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f0f0ec; }
+.dash-card { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border: 1px solid #efefeb; border-radius: 10px; background: #fff; cursor: pointer; transition: all 0.15s; margin-bottom: 6px; }
+.dash-card:hover { border-color: #1D9E75; box-shadow: 0 1px 6px rgba(29,158,117,0.08); }
+.dash-card-info { flex: 1; min-width: 0; }
+.dash-card-nom { font-size: 12px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-card-meta { font-size: 10px; color: #aaa; margin-top: 1px; }
+.dash-card-progress { margin-top: 6px; }
+.dash-progress-bar { height: 5px; background: #f0f0ec; border-radius: 99px; overflow: hidden; margin-bottom: 3px; }
+.dash-progress-fill { height: 100%; border-radius: 99px; background: #1D9E75; transition: width 0.3s; }
+.dash-progress-fill.done { background: #3B6D11; }
+.dash-pct { font-size: 10px; color: #aaa; }
+.dash-resp { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">Gestió d'expedients - Licitacions PRBB · v8</div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-head">
+      <button class="home-btn active-nav" onclick="goHome()">🏠 Inici</button>
+      <button class="new-btn" onclick="openNewExp()">+ Nou expedient</button>
+    </div>
+    <div class="sb-label">Expedients</div>
+    <div class="exp-list" id="expList"></div>
+  </div>
+  <div class="main">
+    <div id="mainContent" style="display:flex;flex-direction:column;height:100%"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalArea"></div>
+
+<script>
+// ── Configuració correus ──────────────────────────────────────────────────────
+const MAIL_ESTER = "ecastellnou@prbb.org";
+const MAIL_IMMA  = "iferrer@prbb.org";
+const MAIL_ABDE  = "ajoueid@prbb.org";   // ← correu de l'Abde
+const MAIL_GENERIC = "ajoueid@prbb.org";
+
+// ── Teams Webhook (Power Automate) ────────────────────────────────────────────
+const TEAMS_WEBHOOK = "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5e761bb805034471ab9b0719fe45aebd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=TLVk6NgCirakUm9QALaWx9SMujeDlSdKhszjC3ejBuI";
+
+async function sendTeamsNotification(destinatari, tasca, exp) {
+  const missatge = `📋 **${destinatari}**, et correspon la següent tasca\n\n**Expedient:** ${exp.codi} – ${exp.nom}\n\n**Tasca:** ${tasca.nom}`;
+  try {
+    await fetch(TEAMS_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: missatge })
+    });
+    toast("Avís enviat a Teams ✓");
+  } catch(e) {
+    console.warn("Error enviant a Teams:", e);
+  }
+}
+
+const MAX_CHARS = 99999; // text complet sempre visible
+
+const ANY_EN_CURS = new Date().getFullYear();
+
+// ── Procediments ──────────────────────────────────────────────────────────────
+const PROCEDIMENTS = {
+  "Licitació": { nom: "Licitació", esLicitacio: true, tasques: [
+    {fase:"PREPARACIÓ", nom:null},
+    {nom:"(Obres) Preparar resolució aprovació projecte i acta de replanteig prèvia, si es cau l'informe de supervisió", resp:"Abde", cond:"obra"},
+    {nom:"Revisió PDC i PPT-esborrany", resp:"Abde"},
+    {nom:"Obertura expedient al GEEC", resp:"Àrea promotora"},
+    {nom:"GEEC - Elaboració documentació: Informació dades GEEC - Elaboració documentació: Informe Justificatiu GEEC - Elaboració documentació: Plec de prescripcions tècniques \"esborrany\" GEEC- Sol·licitud document comptable", resp:"Àrea promotora"},
+    {nom:"Preparar esborranys: Resolució d'inici + PCA + Resolució d'aprovació + Certificat insuficiència mitjans (Servei) + DACI", resp:"Imma"},
+    {nom:"Fer la reunió virtual Comissió Executiva, i signar el certificat acord d'inici i delegació (Òrgan: CE)", resp:"Ester", cond:"ce"},
+    {nom:"Enviar Certificat insuficiència de mitjans a la Lourdes (servei)", resp:"Abde"},
+    {nom:"Preparar informe jurídic i revisar documentació", resp:"Abde"},
+    {nom:"Enviar a signar la resolució d'inici a Jordi Medrano (Òrgan: Gerent)", resp:"Abde"},
+    {nom:"GEEC - Revisió de la petició i, si escau, carregar el certificat de insuficiència de mitjans a documents opcionals", resp:"Abde"},
+    {nom:"GEEC - Resolució d'inici - Carregar la resolució signada", resp:"Abde"},
+    {nom:"Signar informe jurídic i enviar PCA, PPT, Resolució aprovació a Jordi Medrano", resp:"Ester"},
+    {nom:"Posar tots els documents signats a la carpeta (Res inici o certificat acord CE, aprovació, PCA, PPT, certificat insuficiència)", resp:"Abde"},
+    {nom:"GEEC - Plec (tipus/no tipus) - Carregar el PCA signat i a document opcional afegir el PPT definitiu, signats per en Jordi", resp:"Abde"},
+    {nom:"GEEC - Revisió Assessoria Jurídica", resp:"Abde"},
+    {nom:"GEEC - Informe Assessoria Jurídica - Favorable - Carregar el document signat de l'Ester", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud informe fiscal - Tasca omesa", resp:"Abde"},
+    {nom:"GEEC - Informe fiscal - Favorable - Tasca omesa", resp:"Abde"},
+    {nom:"Coordinar les dates de la Mesa amb Ester, i enviar-les a la Imma a través de la seguent tasca", resp:"Abde"},
+    {nom:"Posar al Calendari Outlook la data de fi del termini de presentació d'ofertes", resp:"Imma"},
+    {nom:"Convocar les meses al Calendari Outlook: Sobre A (intern), Sobre B i C (tots els membres), prèvia confirmació que tenen disponibilitat.", resp:"Imma"},
+    {nom:"GEEC - Resolució d'aprovació - Carregar document signat per en Jordi Medrano", resp:"Abde"},
+    {nom:"Revisar DACIs i avisar Imma perquè les enviï", resp:"Abde"},
+    {nom:"Enviar DACIs als membres de la Mesa i fer seguiment de la signatura", resp:"Imma"},
+
+    {fase:"LICITACIÓ", nom:null},
+    {nom:"GEEC - Publicació oficial i data límit presentació ofertes", resp:"Abde"},
+    {nom:"GEEC - Enviament anunci licitació al Perfil de Contractant (No es pot tancar la tasca - ho farà la Imma)", resp:"Abde"},
+    {nom:"Enviar anunci a publicar l'anunci al DOUE (harmonitzat)", resp:"Abde", cond:"harmonitzat"},
+    {nom:"Publicar anunci PSPC", resp:"Abde"},
+    {nom:"GEEC - Enviament anunci licitació al Perfil de Contractant - Anar a la pestanya \"Càrrega manual d'evidències\" i carregar el ZIP que prèviament descarregat de la PSCP (anunci licitació), copiar l'enllaç de l'anunci del Perfil i enganxar-lo a la tasca. Tancar tràmit.", resp:"Imma"},
+    {nom:"GEEC - Convocatòria de les Meses - Confirmar els membres de la mesa.", resp:"Abde"},
+    {nom:"GEEC - Recepció d'ofertes", resp:"Imma"},
+    {nom:"Descarregar certificat ofertes rebudes de la PSCP", resp:"Imma"},
+    {nom:"Fer un ZIP de les DACIs signades", resp:"Imma"},
+    {nom:"GEEC - Certificat de l'oficina receptora - Carregar el certificat d'ofertes rebudes + ZIP DACIs en l'apartat de document opcional", resp:"Imma"},
+
+    {fase:"AVALUACIÓ I MESES", nom:null},
+    {nom:"Aplicar credencials sobre A", resp:"Imma"},
+    {nom:"Aplicar credencials sobre A", resp:"Abde"},
+    {nom:"Acta Sobre A: obertura, descàrrega documentació a carpeta interna i compartida, redactar esborrany (combinar amb GEEC - Nova mesa)", resp:"Imma"},
+    {nom:"Revisió i enviament de l'Acta Sobre A als membres de la Mesa", resp:"Abde"},
+    {nom:"Signar Acta Sobre A, enviar a signar a president, descarregar signada a la carpeta", resp:"Imma"},
+    {nom:"GEEC - Enviament Publicació Avaluació al Perfil (Acta Sobre A) - Escollir l'acta del sobre A i enviar a la PSCP.", resp:"Imma"},
+    {nom:"Entrar a PSCP i enviar a validar l'acta del sobre A", resp:"Imma"},
+    {nom:"Validar tasca a la PSCP (Sobre A)", resp:"Abde"},
+    {nom:"Acta Sobre B: obertura, descàrrega documentació a carpeta interna i compartida, redactar esborrany (combinar amb GEEC - Nova mesa)", resp:"Imma"},
+    {nom:"Enviar contingut Sobre B a l'àrea promotora i fixar termini per tenir l'informe tècnic", resp:"Abde"},
+    {nom:"Revisió i enviament de l'Acta Sobre B als membres de la Mesa", resp:"Abde"},
+    {nom:"Signar Acta Sobre B, enviar a signar president, descarregar signada a la carpeta", resp:"Imma"},
+    {nom:"Entrar a la PSCP (fase Avaluació > afegir l'acta a documentació) i enviar a validar (No fer-ho des del GEEC)", resp:"Imma"},
+    {nom:"Validar tasca a la PSCP (Sobre B)", resp:"Abde"},
+    {nom:"Revisar esborrany informe tècnic valoració i enviar a signar a l'àrea promotora (controlar dates)", resp:"Abde"},
+    {nom:"Acta Sobre C: obertura, descàrrega documentació a carpeta interna i compartida, redactar esborrany (combinar amb GEEC - Nova mesa)", resp:"Imma"},
+    {nom:"Enviar documentació Sobre C a l'Àrea Promotora", resp:"Abde"},
+    {nom:"Revisió i enviament de l'Acta Sobre C als membres de la Mesa", resp:"Abde"},
+    {nom:"CARREGAR l'informe tècnic signat com a document opcional. Signar Acta Sobre C, enviar a signar president, descarregar signada a la carpeta", resp:"Imma"},
+    {nom:"Entrar a la PSCP i afegir a la fase d'avaluació (Acta sobre C + Informe Tècnic) i enviar a validar", resp:"Imma"},
+    {nom:"Validar tasca a la PSCP (Informe tècnic + Sobre C)", resp:"Abde"},
+    {nom:"Acta Classificació: redactar esborrany + Resolució classificació + Requeriment", resp:"Imma"},
+    {nom:"Revisió i enviament de l'Acta Classificació als membres de la Mesa", resp:"Abde"},
+    {nom:"Revisar resolució + requeriment i enviar a signar", resp:"Abde"},
+    {nom:"Signar Acta classificació, enviar a signar president, descarregar signada a la carpeta.", resp:"Imma"},
+    {nom:"Entrar a la PSCP i afegir a la fase d'avaluació els documents (Acta classificació + Resolució classificació) i enviar a validar", resp:"Imma"},
+    {nom:"Validar tasca a la PSCP (Acta classificació + resolució)", resp:"Abde"},
+    {nom:"Enviar el requeriment a la PSCP", resp:"Abde"},
+    {nom:"GEEC - Ofertes - Emplenar tasca i carregar el ZIP dels sobres, si no es pot, dividir en diferents ZIP", resp:"Abde"},
+    {nom:"GEEC - Requeriment documentació - Carregar el requeriment de documentació signat i ADJUNTAR la resolució de classificació com a document opcional", resp:"Imma"},
+    {nom:"Posar al Calendari Outlook la data de fi del termini per contestar el requeriment", resp:"Imma"},
+    {nom:"Preparar la resolució d'adjudicació i notificacions adjudicatari i no adjudicatari/s", resp:"Imma"},
+    {nom:"Preparar el Contracte", resp:"Imma"},
+    {nom:"Quan es rebi la documentació per e-licita, descarregar la documentació i registrar garantia a la llibreta de control i còpia a la carpeta", resp:"Imma"},
+    {nom:"GEEC - Enviament Publicació Avaluació (Pestanya Càrrega Manual PSCP) per penjar el ZIP (que s'ha descarregat de la PSCP) i copiar l'enllaç. Tancar tràmit", resp:"Imma"},
+    {nom:"GEEC - Finalitzar tasca Meses de Contractació", resp:"Imma"},
+    {nom:"Revisar documentació aportada per l'empresa adjudicatària", resp:"Abde"},
+
+    {fase:"ADJUDICACIÓ", nom:null},
+    {nom:"Revisar la resolució d'adjudicació i notificació i enviar a signar", resp:"Abde"},
+    {nom:"GEEC - Verificació documentació - Carregar un ZIP amb tota la documentació aportada", resp:"Abde"},
+    {nom:"GEEC - Resolució adjudicació - Carregar la resolució signada per en Jordi Medrano", resp:"Abde"},
+    {nom:"GEEC - Informar import adjudicació", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud document comptable disposició", resp:"Abde"},
+    {nom:"GEEC - Notificació Resolució Adjudicatari i No Adjudicataris. Carregar les notificacions i enviar notificacions per ENOTUM", resp:"Imma"},
+    {nom:"GEEC - Enviament anunci adjudicació al Perfil de Contractant (per crear anunci a la PSCP)", resp:"Imma"},
+    {nom:"Revisar anunci a la PSCP, validar i avisar Imma que pot descarregar ZIP", resp:"Abde"},
+    {nom:"Descarregar ZIP de l'anunci d'adjudicació i completar tasca GEEC (Pestanya càrrega manual d'evidències)", resp:"Imma"},
+    {nom:"GEEC - Publicació oficial adjudicació", resp:"Imma"},
+
+    {fase:"FORMALITZACIÓ", nom:null},
+    {nom:"Revisar contracte i parlar amb l'àrea promotora sobre l'entrada en vigor.", resp:"Abde"},
+    {nom:"Enviar contracte a través de la PSCP (Requeriment elicita)", resp:"Imma"},
+    {nom:"Posar al Calendari Outlook la data de fi del termini per formalitzar el contracte i fer seguiment", resp:"Imma"},
+    {nom:"Rebre contracte signat i enviar a Jordi Medrano per signar (amb còpia a Abde/Ester)", resp:"Imma"},
+    {nom:"Un cop signat, enviar contracte a l'empresa", resp:"Imma"},
+    {nom:"Enviar contracte a l'àrea promotora / EIF", resp:"Imma"},
+    {nom:"GEEC - Formalització contracte - Carregar el contracte signat", resp:"Abde"},
+    {nom:"GEEC - Informar data formalització", resp:"Abde"},
+    {nom:"GEEC - Enviament anunci formalització al Perfil de Contractant - Només enviar a la PSCP", resp:"Abde"},
+    {nom:"Revisar i enviar anunci DOUE", resp:"Abde"},
+    {nom:"Publicar la fase de formalització a la PSCP (afegint el DOUE si n'hi havia) i enviar a validar", resp:"Abde"},
+    {nom:"Descarregar ZIP i inserir al GEEC tasca 'Enviament anunci formalització al Perfil de Contractant' (Càrrega manual d'evidències)", resp:"Imma"},
+    {nom:"GEEC - Publicació oficial i informar dates garanties", resp:"Abde"},
+    {nom:"GEEC - Fer tasca Enviament RPC", resp:"Imma"}
+  ]},
+
+  "SDA Material": { nom: "SDA Material laboratori", esLicitacio: false, tasques: [
+    {fase:"SDA MATERIAL", nom:null},
+    {nom:"Obertura expedient al GEEC", resp:"Àrea promotora"},
+    {nom:"Revisió de la petició - Descarregar informe a la carpeta", resp:"Abde"},
+    {nom:"GEEC - Resolució d'inici - Esperar a la signatura (Abde vist i plau, Jordi signatura)", resp:"Imma"},
+    {nom:"GEEC - Sol·licitud informe fiscal - Ometre", resp:"Imma"},
+    {nom:"GEEC - Informe fiscal - Ometre", resp:"Imma"},
+    {nom:"GEEC - Resolució d'aprovació. Esperar a la signatura", resp:"Imma"},
+    {nom:"GEEC - Tasca Publicació oficial", resp:"Imma"},
+    {nom:"GEEC - Tasca Enviament anunci licitació - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Invitació licitadors - Ometre Tasca (s'ha de fer massivament per estalviar temps)", resp:"Imma"},
+    {nom:"GEEC - Recepció d'ofertes - Introduir les dades de la empresa adjudicatària (afegir únicament una empresa)", resp:"Imma"},
+    {nom:"GEEC - Certificat de la oficina receptora - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Valoració d'ofertes - Carregar l'informe de l'àrea promotora que hi ha a la carpeta", resp:"Imma"},
+    {nom:"GEEC - Ofertes - Introduir l'import d'adjudicació", resp:"Imma"},
+    {nom:"GEEC - Proposta d'adjudicació - Revisar informació", resp:"Abde"},
+    {nom:"GEEC - Requeriment documentació i Verificació documentació - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Resolució adjudicació - Preparar el document segons plantilla i posar-lo a la signatura (Abde vist i plau, Jordi signatura)", resp:"Imma"},
+    {nom:"GEEC - Informar import adjudicació", resp:"Imma"},
+    {nom:"GEEC - Sol·licitar document comptable", resp:"Imma"},
+    {nom:"GEEC - Notificació resolució adjudicatari", resp:"Imma"},
+    {nom:"GEEC - Tasca Publicació oficial adjudicació", resp:"Imma"},
+    {nom:"GEEC - Tasca Enviament anunci adjudicació al Perfil de Contractant - Enviar a la PSCP i tancar tràmit", resp:"Imma"},
+    {nom:"PSCP - Validar i publicar anunci adjudicació", resp:"Abde"},
+    {nom:"GEEC - Formalització - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Enviament a RPC i canviar a Execució", resp:"Imma"}
+  ]},
+
+  "SDA Formació": { nom: "SDA Formació", esLicitacio: false, tasques: [
+    {fase:"SDA FORMACIÓ", nom:null},
+    {nom:"Obertura expedient al GEEC", resp:"Àrea promotora"},
+    {nom:"Revisió de la petició - Descarregar informe a la carpeta", resp:"Abde"},
+    {nom:"Preparar tots els documents: Resolució d'inici, Resolució d'aprovació, invitació, declaració responsable i oferta econòmica.", resp:"Imma"},
+    {nom:"Revisió i enviar Resolució d'inici, Resolució d'aprovació, invitació a signatura de Jordi Medrano", resp:"Abde"},
+    {nom:"GEEC - Resolució d'inici", resp:"Abde"},
+    {nom:"GEEC - Plec (tipus/no tipus) posar sense pas per AJ, carregar l'informe justificatiu de la Ero o Invitació", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud informe fiscal - Ometre tasca", resp:"Abde"},
+    {nom:"GEEC - Informe fiscal - Ometre tasca", resp:"Abde"},
+    {nom:"GEEC - Resolució d'aprovació. Carregar el document que ja ha signat en Jordi abans", resp:"Abde"},
+    {nom:"GEEC - Tasca Publicació oficial", resp:"Abde"},
+    {nom:"GEEC - Tasca Enviament anunci licitació - Enviar anunci de licitació a la PSCP", resp:"Abde"},
+    {nom:"PSCP - Publicar l'anunci, coordinar dates amb la Ero.", resp:"Abde"},
+    {nom:"GEEC - Invitació licitadors - Ometre Tasca (s'ha de fer massivament per estalviar temps)", resp:"Imma"},
+    {nom:"GEEC - Recepció d'ofertes - Quan acabi el termini recuperar les ofertes", resp:"Imma"},
+    {nom:"GEEC - Certificat de la oficina receptora - Descarregar-lo de la PSCP i carregar-lo al GEEC", resp:"Imma"},
+    {nom:"Preparar esborrany informe de valoració de la Ero segons plantilla, i enviar-li a la Ero per a la signatura", resp:"Imma"},
+    {nom:"GEEC - Valoració d'ofertes - Carregar l'informe de la ERO de la tasca anterior", resp:"Imma"},
+    {nom:"GEEC - Ofertes - Introduir l'import d'adjudicació", resp:"Imma"},
+    {nom:"GEEC - Proposta d'adjudicació - Revisar informació", resp:"Abde"},
+    {nom:"GEEC - Requeriment documentació i Verificació documentació - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Resolució adjudicació - Preparar el document segons plantilla i posar-lo a la signatura (Abde vist i plau, Jordi signatura)", resp:"Imma"},
+    {nom:"GEEC - Informar import adjudicació", resp:"Imma"},
+    {nom:"GEEC - Sol·licitar document comptable", resp:"Imma"},
+    {nom:"GEEC - Notificació resolució adjudicatari", resp:"Imma"},
+    {nom:"GEEC - Tasca Publicació oficial adjudicació", resp:"Imma"},
+    {nom:"GEEC - Tasca Enviament anunci adjudicació al Perfil de Contractant - Enviar a la PSCP i tancar tràmit", resp:"Imma"},
+    {nom:"PSCP - Validar i publicar anunci adjudicació", resp:"Abde"},
+    {nom:"GEEC - Formalització - Ometre tasca", resp:"Imma"},
+    {nom:"GEEC - Enviament a RPC i canviar a Execució", resp:"Imma"}
+  ]},
+
+  "Pròrroga": { nom: "Pròrroga", esLicitacio: false, tasques: [
+    {fase:"PRÒRROGA", nom:null},
+    {nom:"Revisió documents de la pròrroga i enviar a l'àrea promotora per introduir al GEEC", resp:"Abde"},
+    {nom:"Preparar documentació de la pròrroga (Informe jurídic, resolució, notificació i contracte)", resp:"Imma"},
+    {nom:"Revisar documents", resp:"Abde"},
+    {nom:"Signar informe jurídic i enviar Resolució i notificació a Jordi Medrano", resp:"Ester"},
+    {nom:"Guardar documents a la carpeta", resp:"Abde"},
+    {nom:"GEEC - Revisió de la petició", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud informe fiscal - Tasca omesa", resp:"Abde"},
+    {nom:"GEEC - Resolució de la pròrroga - Carregar document signat ADJUNTAR com a document opcional l'informe jurídic", resp:"Abde"},
+    {nom:"Anar a la PSCP i crear un requeriment de signatura del contracte a eLicita adjuntant notificació i contracte", resp:"Abde"},
+    {nom:"GEEC - Informar import de la pròrroga", resp:"Imma"},
+    {nom:"GEEC - Sol·licitud de document comptable", resp:"Imma"},
+    {nom:"GEEC - Notificació resolució de pròrroga - Només carregar el document de la notificació signat, sense enviar-lo", resp:"Imma"},
+    {nom:"Esperar la recepció del contracte a través de elicita, descarregar-lo i enviar-lo a la signatura d'en Jordi amb còpia Abde/Ester", resp:"Imma"},
+    {nom:"GEEC - Formalització contracte - Carregar el contracte signat", resp:"Imma"},
+    {nom:"GEEC - Verificació de dates", resp:"Abde"},
+    {nom:"GEEC - Enviament de la pròrroga al Perfil de contractant", resp:"Abde"},
+    {nom:"GEEC - Enviament a RPC", resp:"Abde"}
+  ]},
+
+  "Modificació": { nom: "Modificació", esLicitacio: false, tasques: [
+    {fase:"MODIFICACIÓ", nom:null},
+    {nom:"Revisió documents de la modificació i enviar a l'àrea promotora per introduir al GEEC", resp:"Abde"},
+    {nom:"Preparar documentació de la modificació (Informe jurídic, resolució, notificació i contracte)", resp:"Imma"},
+    {nom:"Revisar documents", resp:"Abde"},
+    {nom:"Signar informe jurídic i enviar Resolució i notificació a Jordi Medrano", resp:"Ester"},
+    {nom:"Guardar documents a la carpeta", resp:"Abde"},
+    {nom:"GEEC - Revisió de la petició", resp:"Abde"},
+    {nom:"GEEC - Resolució d'inici de la modificació - Carregar la resolució signada per Jordi Medrano", resp:"Abde"},
+    {nom:"GEEC - Notificació d'audiència al contractista - Carregar la notificació signada per Jordi Medrano", resp:"Abde"},
+    {nom:"Anar a la PSCP i crear un requeriment de signatura del contracte a eLicita adjuntant notificació i contracte, s'ha de demanar la garantia. En el text es dona la opció de presentar al·legacions o signar el contracte ja que tenen els dos espais habilitats", resp:"Abde"},
+    {nom:"Esperar al·legacions o signatura del contracte. Si hi ha al·legacions cal fer informe tècnic, nova resolució i notificació, valorar si cal informe jurídic", resp:"Abde"},
+    {nom:"GEEC - Al·legacions del contractista (Informar amb o sense)", resp:"Abde"},
+    {nom:"GEEC - Revisió per part d'Assessoria Jurídica", resp:"Abde"},
+    {nom:"GEEC - Informe Jurídic favorable/desfavorable - Carregar l'informe jurídic que ja esta signat.", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud d'informe fiscal - Ometre tasca", resp:"Abde"},
+    {nom:"GEEC - Informe fiscal - Ometre tasca", resp:"Abde"},
+    {nom:"GEEC - Resolució de modificació - Si no hi ha al·legacions CARREGAR la mateixa resolució que abans. SI hi ha al·legacions la nova resolució.", resp:"Abde"},
+    {nom:"NOMÉS SI HI HA AL·LEGACIONS: Anar a la PSCP i crear un requeriment de signatura del contracte a eLicita adjuntant la nova notificació i contracte. S'ha de demanar la garantia", resp:"Abde"},
+    {nom:"Posar-se en contacte amb l'empresa per verificar que està preparant la garantia", resp:"Abde"},
+    {nom:"GEEC - Verificació de constitució de garantia - Tasca omesa", resp:"Abde"},
+    {nom:"GEEC - Informar garanties - Informa de la garantia aportada", resp:"Abde"},
+    {nom:"GEEC - Sol·licitud de document comptable", resp:"Imma"},
+    {nom:"GEEC - Notificació resolució de modificació - Només carregar el document de la notificació signat, sense enviar-lo", resp:"Imma"},
+    {nom:"Esperar la recepció del contracte a través de elicita, descarregar-lo i enviar-lo a la signatura d'en Jordi amb còpia Abde/Ester", resp:"Imma"},
+    {nom:"GEEC - Formalització contracte - Carregar el contracte signat", resp:"Imma"},
+    {nom:"GEEC - Publicació oficial i informació de dates", resp:"Abde"},
+    {nom:"GEEC - Enviament de la modificació al Perfil de contractant", resp:"Abde"},
+    {nom:"GEEC - Enviament a RPC", resp:"Abde"}
+  ]}
+};
+
+// ── Estat ─────────────────────────────────────────────────────────────────────
+let expedients = [];
+let currentId = null;
+let currentView = "home";
+let db = null; // Firestore instance, s'inicialitza a initFirebase()
+
+const RESP_CLASS = {
+  "Imma": "r-imma",
+  "Abde": "r-abde",
+  "Àrea promotora": "r-area",
+  "Ester": "r-ester"
+};
+
+// save() escriu l'expedient actual a Firestore
+async function save() {
+  if (!db) return;
+  const { doc, setDoc, deleteDoc, collection } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  for (const exp of expedients) {
+    await setDoc(doc(db, "expedients_v8", exp.id), exp);
+  }
+}
+
+// saveOne() escriu un sol expedient (més eficient)
+async function saveOne(exp) {
+  if (!db) return;
+  const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await setDoc(doc(db, "expedients_v8", exp.id), exp);
+}
+
+// deleteOne() elimina un expedient de Firestore
+async function deleteOne(id) {
+  if (!db) return;
+  const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await deleteDoc(doc(db, "expedients_v8", id));
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function escHtml(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function escAttr(s) {
+  return String(s || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// ── Dashboard inici ──────────────────────────────────────────────────────────
+function renderHome() {
+  if (!expedients.length) {
+    return `<div style="padding:30px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px">Inici</h2>
+        <button onclick="openNewExp()" style="padding:8px 16px;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500">+ Nou expedient</button>
+      </div>
+      <p style="color:#bbb;font-size:13px">Cap expedient encara. Crea el primer!</p>
+    </div>`;
+  }
+
+  // Agrupar per tipus
+  const ORDRE = ["Licitació","SDA Material","SDA Formació","Pròrroga","Modificació"];
+  const grups = {};
+  ORDRE.forEach(t => grups[t] = []);
+  expedients.forEach(e => {
+    if (grups[e.tipus] !== undefined) grups[e.tipus].push(e);
+    else grups["Altres"] = (grups["Altres"] || []).concat(e);
+  });
+
+  const RESP_COL = { "Imma":"r-imma", "Abde":"r-abde", "Ester":"r-ester", "Àrea promotora":"r-area" };
+
+  function cardHTML(e) {
+    const total = e.tasques.filter(t => t.nom).length;
+    const fetes = e.tasques.filter(t => t.nom && t.feta).length;
+    const pct = total ? Math.round(fetes / total * 100) : 0;
+    const isDone = pct === 100;
+
+    // Responsable actual: primera tasca pendent
+    const seguent = e.tasques.find(t => t.nom && !t.feta);
+    const respActual = seguent ? seguent.resp : "✓ Completat";
+    const respClass = seguent ? (RESP_COL[seguent.resp] || "") : "b-green";
+
+    return `<div class="dash-card" onclick="selectExp('${e.id}')">
+      <div class="dash-card-info">
+        <div class="dash-card-nom">${escHtml(e.nom)}</div>
+        <div class="dash-card-meta">${escHtml(e.codi)} · ${escHtml(e.area)}</div>
+        <div class="dash-card-progress">
+          <div class="dash-progress-bar">
+            <div class="dash-progress-fill${isDone?' done':''}" style="width:${pct}%"></div>
+          </div>
+          <div class="dash-pct">${fetes} de ${total} tasques completades (${pct}%)</div>
+        </div>
+      </div>
+      <div class="dash-resp">
+        <span class="resp-pill ${respClass}" style="font-size:10px">${escHtml(respActual)}</span>
+      </div>
+    </div>`;
+  }
+
+  let html = `<div style="padding:22px 26px;overflow-y:auto;height:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:17px;font-weight:700">Resum d'expedients</h2>
+      <button onclick="openNewExp()" style="padding:7px 15px;background:#1D9E75;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500">+ Nou expedient</button>
+    </div>`;
+
+  ORDRE.forEach(tipus => {
+    const llista = grups[tipus];
+    if (!llista || !llista.length) return;
+    html += `<div class="dash-section">
+      <div class="dash-section-title">${escHtml(tipus)} <span style="font-weight:400;color:#ccc">(${llista.length})</span></div>
+      ${llista.map(e => cardHTML(e)).join("")}
+    </div>`;
+  });
+
+  if (grups["Altres"] && grups["Altres"].length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title">Altres</div>
+      ${grups["Altres"].map(e => cardHTML(e)).join("")}
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ── Navegació ─────────────────────────────────────────────────────────────────
+function goHome() {
+  currentView = "home"; currentId = null;
+  renderSidebar(); renderMain();
+}
+function selectExp(id) {
+  currentView = "exp"; currentId = id;
+  renderSidebar(); renderMain();
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const el = document.getElementById("expList");
+  el.innerHTML = expedients.map(e => `
+    <div class="exp-item${e.id === currentId ? ' active' : ''}" onclick="selectExp('${e.id}')">
+      <div class="exp-code">${escHtml(e.codi)}</div>
+      <div class="exp-name">${escHtml(e.nom)}</div>
+    </div>`).join("") || '<div style="padding:20px;color:#bbb;font-size:12px">Cap expedient encara</div>';
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+function renderMain() {
+  const mc = document.getElementById("mainContent");
+  if (currentView === "home") {
+    mc.innerHTML = renderHome();
+    return;
+  }
+
+  const exp = expedients.find(e => e.id === currentId);
+  if (!exp) return;
+
+  const proc = PROCEDIMENTS[exp.tipus];
+
+  let html = `
+  <div class="mhead">
+    <div style="flex:1;min-width:0">
+      <div>
+        <span class="mtitle" id="nomDisplay" onclick="startEditNom('${exp.id}')" title="Clica per editar el nom">${escHtml(exp.nom)}</span>
+      </div>
+      <div class="mmeta">
+        <span id="codiDisplay" onclick="startEditCodi('${exp.id}')" style="cursor:pointer;border-bottom:1px dashed #bbb;padding-bottom:1px" title="Clica per editar el codi">${escHtml(exp.codi)}</span>
+        &nbsp;·&nbsp;${escHtml(exp.tipus)}
+      </div>
+    </div>
+    <button class="btn btn-red" onclick="deleteExp('${exp.id}')">Eliminar</button>
+  </div>
+  <div class="mbody">`;
+
+  // Etiquetes d'estat NOMÉS per a Licitació
+  if (proc && proc.esLicitacio) {
+    const tags = [];
+    if (exp.esObra) tags.push(`<span class="badge b-amber">Obra</span>`);
+    if (exp.organ === "ce") tags.push(`<span class="badge b-blue">Comissió Executiva</span>`);
+    if (exp.harmonitzat) tags.push(`<span class="badge b-green">Harmonitzat</span>`);
+    if (tags.length) html += `<div style="display:flex;gap:8px;flex-wrap:wrap">${tags.join("")}</div>`;
+  }
+
+  exp.tasques.forEach((t, i) => {
+    if (!t.nom) {
+      html += `<div class="fase-header">${escHtml(t.fase)}</div>`;
+      return;
+    }
+
+    const nomComplet = t.nom;
+    // Versió curta: primera línia o primers MAX_CHARS caràcters
+    const primeraLinia = nomComplet.split("\n")[0];
+    const teTallat = nomComplet.length > MAX_CHARS || nomComplet.includes("\n");
+    const nomCurt = teTallat
+      ? (primeraLinia.length > MAX_CHARS ? primeraLinia.substring(0, MAX_CHARS) + "…" : primeraLinia + "…")
+      : nomComplet;
+
+    const nomHtml = teTallat
+      ? `${escHtml(nomCurt)}<button class="task-expand-btn" onclick="showTaskDetail('${exp.id}',${i})">veure tot</button>`
+      : escHtml(nomComplet);
+
+    html += `
+    <div class="task ${t.feta ? 'done' : ''}">
+      <div class="chk ${t.feta ? 'checked' : ''}" onclick="toggleTask('${exp.id}', ${i})">${t.feta ? '✓' : ''}</div>
+      <div class="task-body">
+        <div class="task-name ${t.feta ? 'done-text' : ''}">${nomHtml}</div>
+        <div class="task-tags">
+          <span class="resp-pill ${RESP_CLASS[t.resp] || ''}">${escHtml(t.resp)}</span>
+          <button class="mail-btn" onclick="showMail('${exp.id}', ${i})" title="Enviar correu">✉</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  mc.innerHTML = html + `</div>`;
+}
+
+// ── Modal detall de tasca ─────────────────────────────────────────────────────
+function showTaskDetail(expId, idx) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const t = exp.tasques[idx];
+
+  document.getElementById("modalArea").innerHTML = `
+    <div class="modal-bg" onclick="this.remove()">
+      <div class="task-detail-modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Detall de la tasca</div>
+        <div class="task-detail-body">${escHtml(t.nom)}</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn" onclick="this.closest('.modal-bg').remove()">Tancar</button>
+          <button class="btn btn-g" onclick="completeFromDetail('${expId}',${idx})">✓ Completar tasca</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function completeFromDetail(expId, idx) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const t = exp.tasques[idx];
+  if (!t.feta) {
+    t.feta = true;
+    renderMain();
+    await saveOne(exp);
+    toast("Tasca completada!");
+    triggerAutoMail(exp, idx);
+  }
+  document.querySelector(".modal-bg")?.remove();
+}
+
+// ── Correu automàtic per Ester i Imma ────────────────────────────────────────
+// Quan es completa la tasca a l'índex `idxCompletada`, busca la SEGÜENT tasca
+// pendent i, si és de l'Ester o la Imma, obre un correu avisant-les.
+async function triggerAutoMail(exp, idxCompletada) {
+  const completada = exp.tasques[idxCompletada];
+  const seguent = exp.tasques.slice(idxCompletada + 1).find(t => t.nom && !t.feta);
+  if (!seguent) return;
+
+  // Només dispara si hi ha canvi de responsable
+  if (!completada || completada.resp === seguent.resp) return;
+
+  const MAILS = {
+    "Ester": MAIL_ESTER,
+    "Imma":  MAIL_IMMA,
+    "Abde":  MAIL_ABDE
+  };
+
+  const destinatari = seguent.resp;
+  const mail = MAILS[destinatari];
+
+  // Envia sempre a Teams (automàtic, sense intervenció)
+  await sendTeamsNotification(destinatari, seguent, exp);
+
+  // A més, obre el correu de l'Outlook si hi ha adreça configurada
+  if (mail) {
+    const subj = `[${exp.codi}] Nova tasca pendent – ${exp.nom}`;
+    const body = `Hola ${destinatari},\n\nS'ha completat la tasca anterior a l'expedient ${exp.codi} – ${exp.nom}.\n\nEt correspon la següent tasca:\n"${seguent.nom}"\n\nGràcies!`;
+    window.location.href = `mailto:${mail}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  }
+}
+
+// ── Toggle tasca ──────────────────────────────────────────────────────────────
+async function toggleTask(expId, idx) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const tasca = exp.tasques[idx];
+  const eraFeta = tasca.feta;
+  tasca.feta = !tasca.feta;
+  renderMain();
+  await saveOne(exp);
+
+  if (!eraFeta && tasca.feta) {
+    triggerAutoMail(exp, idx);
+  }
+}
+
+// ── Correu manual (botó ✉) ────────────────────────────────────────────────────
+function showMail(expId, idx) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const t = exp.tasques[idx];
+  const nom = t.resp || "";
+  const subj = `[${exp.codi}] Recordatori de tasca – ${exp.nom}`;
+  const body = `Hola ${nom},\n\nQueda pendent la següent tasca a l'expedient ${exp.codi} – ${exp.nom}:\n"${t.nom}"\n\nGràcies!`;
+  window.location.href = `mailto:${MAIL_GENERIC}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+}
+
+// ── Edició inline nom ─────────────────────────────────────────────────────────
+function startEditNom(expId) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const el = document.getElementById("nomDisplay");
+  if (!el) return;
+  el.outerHTML = `<input class="edit-inline" id="nomInput" value="${escAttr(exp.nom)}"
+    onblur="saveNom('${expId}')"
+    onkeydown="if(event.key==='Enter')saveNom('${expId}');if(event.key==='Escape')renderMain()" />`;
+  document.getElementById("nomInput")?.focus();
+}
+
+async function saveNom(expId) {
+  const inp = document.getElementById("nomInput");
+  if (!inp) return;
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const val = inp.value.trim();
+  if (val) exp.nom = val;
+  renderSidebar();
+  renderMain();
+  await saveOne(exp);
+}
+
+// ── Edició inline codi ────────────────────────────────────────────────────────
+function startEditCodi(expId) {
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const el = document.getElementById("codiDisplay");
+  if (!el) return;
+  el.outerHTML = `<input class="edit-inline-sm" id="codiInput" value="${escAttr(exp.codi)}"
+    onblur="saveCodi('${expId}')"
+    onkeydown="if(event.key==='Enter')saveCodi('${expId}');if(event.key==='Escape')renderMain()" />`;
+  document.getElementById("codiInput")?.focus();
+}
+
+async function saveCodi(expId) {
+  const inp = document.getElementById("codiInput");
+  if (!inp) return;
+  const exp = expedients.find(e => e.id === expId);
+  if (!exp) return;
+  const val = inp.value.trim();
+  if (val) exp.codi = val;
+  renderSidebar();
+  renderMain();
+  await saveOne(exp);
+}
+
+// ── Modal nou expedient ───────────────────────────────────────────────────────
+function openNewExp() {
+  document.getElementById("modalArea").innerHTML = `
+    <div class="modal-bg" onclick="this.remove()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Nou expedient</div>
+
+        <label class="form-label">Nom de l'expedient</label>
+        <input id="nNom" class="form-input" placeholder="Ex: Licitació material laboratori" />
+
+        <label class="form-label">Número d'expedient</label>
+        <input id="nCodi" class="form-input" value="PRBB-${ANY_EN_CURS}-" placeholder="Ex: PRBB-${ANY_EN_CURS}-001" />
+
+        <label class="form-label">Àrea promotora</label>
+        <select id="nArea" class="form-input">
+          <option value="">Selecciona àrea</option>
+          <option>Administració General</option>
+          <option>Comunicació</option>
+          <option>Direcció</option>
+          <option>Economia i Finances</option>
+          <option>Estabulari</option>
+          <option>Infraestructures</option>
+          <option>Intervals</option>
+          <option>Recursos Humans</option>
+          <option>Relacions Institucionals</option>
+          <option>Serveis Jurídics</option>
+        </select>
+
+        <label class="form-label">Tipus de procediment</label>
+        <div class="radio-group" id="procGroup">
+          <label class="radio-opt" onclick="selectProc(this,'Licitació')">Licitació</label>
+          <label class="radio-opt" onclick="selectProc(this,'SDA Material')">SDA Material laboratori</label>
+          <label class="radio-opt" onclick="selectProc(this,'SDA Formació')">SDA Formació</label>
+          <label class="radio-opt" onclick="selectProc(this,'Pròrroga')">Pròrroga</label>
+          <label class="radio-opt" onclick="selectProc(this,'Modificació')">Modificació</label>
+        </div>
+        <input type="hidden" id="nProcediment">
+
+        <!-- Opcions addicionals: NOMÉS Licitació -->
+        <div id="extraOptions" style="display:none;margin-top:15px;padding-top:15px;border-top:1px solid #f0f0ec">
+          <label class="form-label">És obra?</label>
+          <div class="radio-group">
+            <label class="radio-opt" onclick="selectOpt(this,'nObra','si')">Sí</label>
+            <label class="radio-opt" onclick="selectOpt(this,'nObra','no')">No</label>
+          </div>
+          <input type="hidden" id="nObra">
+
+          <label class="form-label">Òrgan que resol</label>
+          <div class="radio-group">
+            <label class="radio-opt" onclick="selectOpt(this,'nOrgan','ce')">Comissió Executiva (CE)</label>
+            <label class="radio-opt" onclick="selectOpt(this,'nOrgan','gerent')">Gerent</label>
+          </div>
+          <input type="hidden" id="nOrgan">
+
+          <label class="form-label">Harmonitzat?</label>
+          <div class="radio-group">
+            <label class="radio-opt" onclick="selectOpt(this,'nHarm','si')">Sí</label>
+            <label class="radio-opt" onclick="selectOpt(this,'nHarm','no')">No</label>
+          </div>
+          <input type="hidden" id="nHarm">
+        </div>
+
+        <div style="margin-top:25px;text-align:right;display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn" onclick="this.closest('.modal-bg').remove()">Cancel·lar</button>
+          <button class="btn btn-g" onclick="createExp()">Crear expedient</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function selectProc(el, value) {
+  document.querySelectorAll('#procGroup .radio-opt').forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+  document.getElementById("nProcediment").value = value;
+  const esLic = PROCEDIMENTS[value]?.esLicitacio;
+  document.getElementById("extraOptions").style.display = esLic ? "block" : "none";
+}
+
+function selectOpt(el, hiddenId, value) {
+  el.parentElement.querySelectorAll('.radio-opt').forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+  document.getElementById(hiddenId).value = value;
+}
+
+async function createExp() {
+  const nom = document.getElementById("nNom").value.trim();
+  const codi = document.getElementById("nCodi").value.trim();
+  const area = document.getElementById("nArea").value;
+  const procKey = document.getElementById("nProcediment").value;
+  const esObra = document.getElementById("nObra")?.value === "si";
+  const organ = document.getElementById("nOrgan")?.value || "";
+  const harmonitzat = document.getElementById("nHarm")?.value === "si";
+
+  if (!nom || !codi || !procKey) {
+    alert("Omple el nom, el codi i selecciona el tipus de procediment");
+    return;
+  }
+
+  const proc = PROCEDIMENTS[procKey];
+  let tasques = proc.tasques.map(t => ({ ...t, feta: false }));
+
+  if (proc.esLicitacio) {
+    tasques = tasques.filter(t => {
+      if (!t.nom) return true;
+      if (t.cond === "obra" && !esObra) return false;
+      if (t.cond === "harmonitzat" && !harmonitzat) return false;
+      if (t.cond === "ce" && organ !== "ce") return false;
+      return true;
+    });
+  }
+
+  const id = "exp_" + Date.now();
+  expedients.unshift({
+    id, codi, nom,
+    area: area || "—",
+    tipus: proc.nom,
+    esObra, organ, harmonitzat,
+    data: new Date().toLocaleDateString("ca-ES"),
+    tasques
+  });
+
+  document.querySelector(".modal-bg").remove();
+  currentId = id;
+  renderSidebar();
+  renderMain();
+  toast("Expedient creat correctament!");
+  await saveOne(expedients[0]);
+}
+
+async function deleteExp(id) {
+  if (confirm("Eliminar aquest expedient?")) {
+    expedients = expedients.filter(e => e.id !== id);
+    goHome();
+    await deleteOne(id);
+  }
+}
+
+// ── Init Firebase i escolta temps real ───────────────────────────────────────
+async function initFirebase() {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+  const { getFirestore, collection, onSnapshot, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0kGjdiM5v8OgIThqckGPIjx3iD4FMbFM",
+    authDomain: "prova-v8-prbb.firebaseapp.com",
+    projectId: "prova-v8-prbb",
+    storageBucket: "prova-v8-prbb.firebasestorage.app",
+    messagingSenderId: "962462273858",
+    appId: "1:962462273858:web:c9833bfdf3f3fcffdb78db"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+
+  // Escolta canvis en temps real — actualitza automàticament quan qualsevol persona fa un canvi
+  const q = query(collection(db, "expedients_v8"));
+  onSnapshot(q, (snapshot) => {
+    expedients = snapshot.docs.map(d => d.data());
+    // Ordenar per data de creació (més recent primer)
+    expedients.sort((a, b) => (b.data || "").localeCompare(a.data || ""));
+    renderSidebar();
+    if (currentView === "home") renderMain();
+    else if (currentId) {
+      const still = expedients.find(e => e.id === currentId);
+      if (still) renderMain();
+      else goHome();
+    }
+  });
+
+  // Indicador de connexió
+  toast("Connectat a Firebase ✓");
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+goHome();
+initFirebase();
+</script>
+</body>
+</html>
