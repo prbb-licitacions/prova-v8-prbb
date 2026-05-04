@@ -122,38 +122,37 @@ const MAIL_GENERIC = "ajoueid@prbb.org";
 const TEAMS_WEBHOOK = "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5e761bb805034471ab9b0719fe45aebd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=TLVk6NgCirakUm9QALaWx9SMujeDlSdKhszjC3ejBuI";
 
 async function sendTeamsNotification(destinatari, tasca, exp) {
-  const body = {
-    type: "message",
-    attachments: [{
-      contentType: "application/vnd.microsoft.card.adaptive",
-      content: {
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-        type: "AdaptiveCard",
-        version: "1.4",
-        body: [
-          {
-            type: "TextBlock",
-            text: `📋 Nova tasca per a **${destinatari}**`,
-            weight: "Bolder",
-            size: "Medium",
-            wrap: true
-          },
-          {
-            type: "FactSet",
-            facts: [
-              { title: "Expedient:", value: `${exp.codi} – ${exp.nom}` },
-              { title: "Tasca:", value: tasca.nom }
-            ]
-          }
-        ]
+  // Power Automate espera directament l'objecte AdaptiveCard sense embolcall
+  const card = {
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.2",
+    "body": [
+      {
+        "type": "TextBlock",
+        "text": `Nova tasca per a ${destinatari}`,
+        "weight": "Bolder",
+        "size": "Medium",
+        "wrap": true
+      },
+      {
+        "type": "TextBlock",
+        "text": `Expedient: ${exp.codi} – ${exp.nom}`,
+        "wrap": true,
+        "isSubtle": true
+      },
+      {
+        "type": "TextBlock",
+        "text": `Tasca: ${tasca.nom}`,
+        "wrap": true
       }
-    }]
+    ]
   };
   try {
     const res = await fetch(TEAMS_WEBHOOK, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(card)
     });
     if (res.ok) toast("Avís enviat a Teams ✓");
     else console.warn("Error Teams:", res.status, await res.text());
