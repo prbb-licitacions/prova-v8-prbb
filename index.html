@@ -120,9 +120,9 @@ const MAIL_GENERIC = "ajoueid@prbb.org";
 
 // ── Teams Webhooks per persona (Power Automate) ──────────────────────────────
 const TEAMS_WEBHOOKS = {
-  "Abde":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1",
-  "Imma":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1",
-  "Ester": "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1"
+  "Abde":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=AuEcQGpPec-Z17LN-Ce_1qGTCnDlesMY8uoyugd9yEY",
+  "Imma":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=AuEcQGpPec-Z17LN-Ce_1qGTCnDlesMY8uoyugd9yEY",
+  "Ester": "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/be13598d284b4e64a932dca791bc7f7c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=AuEcQGpPec-Z17LN-Ce_1qGTCnDlesMY8uoyugd9yEY"
 };
 
 async function sendTeamsNotification(destinatari, tasca, exp) {
