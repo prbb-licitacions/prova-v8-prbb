@@ -118,43 +118,25 @@ const MAIL_IMMA  = "iferrer@prbb.org";
 const MAIL_ABDE  = "ajoueid@prbb.org";   // ← correu de l'Abde
 const MAIL_GENERIC = "ajoueid@prbb.org";
 
-// ── Teams Webhook (Power Automate) ────────────────────────────────────────────
-const TEAMS_WEBHOOK = "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5e761bb805034471ab9b0719fe45aebd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=TLVk6NgCirakUm9QALaWx9SMujeDlSdKhszjC3ejBuI";
+// ── Teams Webhooks per persona (Power Automate) ──────────────────────────────
+const TEAMS_WEBHOOKS = {
+  "Abde":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e3486d1d0fdf4de48f469555a4b6e372/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HXfK8nw7TI2yK_sT__1edsUq22M2anczX4WQpGFQuLM",
+  "Imma":  "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e3486d1d0fdf4de48f469555a4b6e372/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HXfK8nw7TI2yK_sT__1edsUq22M2anczX4WQpGFQuLM",
+  "Ester": "https://defaultdc67a6bdcd6a4f138c22b9d087ee74.c5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e3486d1d0fdf4de48f469555a4b6e372/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HXfK8nw7TI2yK_sT__1edsUq22M2anczX4WQpGFQuLM"
+};
 
 async function sendTeamsNotification(destinatari, tasca, exp) {
-  // Power Automate espera directament l'objecte AdaptiveCard sense embolcall
-  const card = {
-    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-    "type": "AdaptiveCard",
-    "version": "1.2",
-    "body": [
-      {
-        "type": "TextBlock",
-        "text": `Nova tasca per a ${destinatari}`,
-        "weight": "Bolder",
-        "size": "Medium",
-        "wrap": true
-      },
-      {
-        "type": "TextBlock",
-        "text": `Expedient: ${exp.codi} – ${exp.nom}`,
-        "wrap": true,
-        "isSubtle": true
-      },
-      {
-        "type": "TextBlock",
-        "text": `Tasca: ${tasca.nom}`,
-        "wrap": true
-      }
-    ]
-  };
+  const webhook = TEAMS_WEBHOOKS[destinatari];
+  if (!webhook) return; // Àrea promotora i altres no tenen webhook
+
+  const text = `📋 Hola ${destinatari}! Et correspon la següent tasca a l'expedient ${exp.codi} – ${exp.nom}:\n\n"${tasca.nom}"`;
   try {
-    const res = await fetch(TEAMS_WEBHOOK, {
+    const res = await fetch(webhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(card)
+      body: JSON.stringify({ text: text })
     });
-    if (res.ok) toast("Avís enviat a Teams ✓");
+    if (res.ok) toast(`Avís enviat a Teams a ${destinatari} ✓`);
     else console.warn("Error Teams:", res.status, await res.text());
   } catch(e) {
     console.warn("Error enviant a Teams:", e);
